@@ -17,6 +17,7 @@ GuiManager::~GuiManager()
 
 bool GuiManager::Initialize()
 {
+	// Initialize SDL subsystems (video, timer, game controller)
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
 	{
 		return false;
@@ -31,17 +32,19 @@ bool GuiManager::Initialize()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
+	// Create app window
 	window = SDL_CreateWindow("PacketInspector", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if (!window)
 	{
 		return false;
 	}
 
+	// Create OpenGL context and enable vsync
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_MakeCurrent(window, glContext);
 	SDL_GL_SetSwapInterval(1); // Enable vsync
 
-	// Setup ImGui context
+	// Setup ImGui context, core and apply dark theme
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -56,6 +59,7 @@ bool GuiManager::Initialize()
 
 void GuiManager::NewFrame()
 {
+	// Process all SDL events (input, window events, etc.)
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -65,30 +69,38 @@ void GuiManager::NewFrame()
 			running = false;
 		}
 	}
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
-		ImGui::NewFrame();
+	// Start new ImGui frame for rendering UI
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
 
-		// For now demo window
-		ImGui::ShowDemoWindow();
+	// Display ImGui demo window (for testing purposes)
+	ImGui::ShowDemoWindow();
 }
 
 void GuiManager::Render()
 {
+	// Finalize ImGui draw data
 	ImGui::Render();
+
+	// Clear the screen with dark gray color and render ImGui
 	glViewport(0, 0, 1280, 720);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	// Swap front and back buffers to display rendered frame
 	SDL_GL_SwapWindow(window);
 }
 
 void GuiManager::Shutdown()
 {
+	// Clean up ImGui and backends and context
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
 
+	// Clean up SDL resources
 	if (glContext) SDL_GL_DeleteContext(glContext);
 	if (window) SDL_DestroyWindow(window);
 
