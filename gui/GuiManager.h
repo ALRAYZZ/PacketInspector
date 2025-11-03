@@ -13,7 +13,7 @@ public:
 	void Render();
 	void Shutdown();
 
-	bool ShouldClose();
+	bool ShouldClose() const;
 
 
 private:
