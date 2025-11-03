@@ -64,14 +64,13 @@ void GuiManager::NewFrame()
 		{
 			running = false;
 		}
-
+	}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
 		// For now demo window
 		ImGui::ShowDemoWindow();
-	}
 }
 
 void GuiManager::Render()
