@@ -1,0 +1,13 @@
+{
+  "name": "packetinspector",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "sdl2",
+    {
+      "name": "imgui",
+      "features": [ "opengl3-binding" ]
+    },
+    "opengl"
+  ],
+  "builtin-baseline": "e3ed41868d5034bc608eaaa58383cd6ecdbb5ffb"
+}

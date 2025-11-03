@@ -3,6 +3,11 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
+# Auto-use vcpkg if available
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "")
+endif()
+
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -11,11 +16,28 @@ endif()
 
 project ("PacketInspector")
 
-# Add source to this project's executable.
-add_executable (PacketInspector "PacketInspector.cpp" "PacketInspector.h")
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET PacketInspector PROPERTY CXX_STANDARD 20)
-endif()
+# Find packages
+find_package(SDL2 CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
 
-# TODO: Add tests and install targets if needed.
+# Add source to this project's executable
+add_executable (PacketInspector
+  main.cpp
+  "gui/GuiManager.cpp" 
+  "gui/GuiManager.h"
+  "gui/backends/imgui_impl_sdl2.cpp"
+  "gui/backends/imgui_impl_opengl3.cpp"
+)
+
+# Link libraries
+target_link_libraries(PacketInspector PRIVATE
+	SDL2::SDL2
+	SDL2::SDL2main
+	imgui::imgui
+	OpenGL::GL
+)
