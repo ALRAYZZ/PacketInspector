@@ -130,7 +130,6 @@ void GuiManager::NewFrame()
 	
 	// Begin main window with no title bar, resize, move, or collapse
 	ImGui::Begin("MainWindow", nullptr, 
-		ImGuiWindowFlags_NoTitleBar | 
 		ImGuiWindowFlags_NoResize | 
 		ImGuiWindowFlags_NoMove | 
 		ImGuiWindowFlags_NoCollapse |
