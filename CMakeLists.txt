@@ -33,6 +33,7 @@ add_executable (PacketInspector
   "gui/backends/imgui_impl_sdl2.cpp"
   "gui/backends/imgui_impl_opengl3.cpp"
   "core/CaptureEngine.h" 
+  "core/CaptureEngine.cpp"
   "core/PacketParser.h"
 )
 
