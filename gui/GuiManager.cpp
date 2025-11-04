@@ -42,20 +42,32 @@ bool GuiManager::Initialize()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-	// Enable window to be resizable and allow screensaver
-	SDL_SetHint(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1");
+	// Get screen height for full vertical coverage
+	SDL_DisplayMode displayMode;
+	SDL_GetCurrentDisplayMode(0, &displayMode);
+	int screenHeight = displayMode.h;
 
-	// Create app window
+	// Create vertical window on left side of screen
+	int windowWidth = 800;  // Width of the sidebar
+	int windowHeight = screenHeight;  // Full screen height
+	int xPos = 0;  // Left edge of screen
+	int yPos = 0;  // Top of screen
+
 	window = SDL_CreateWindow("PacketInspector",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		1280,
-		720,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALWAYS_ON_TOP);
+		xPos,
+		yPos,
+		windowWidth,
+		windowHeight,
+		SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
 	if (!window)
 	{
 		return false;
 	}
+
+	// Create OpenGL context and enable vsync
+	glContext = SDL_GL_CreateContext(window);
+	SDL_GL_MakeCurrent(window, glContext);
+	SDL_GL_SetSwapInterval(1); // Enable vsync
 
 #ifdef _WIN32
 	// Get Windows handle
@@ -64,18 +76,19 @@ bool GuiManager::Initialize()
 	SDL_GetWindowWMInfo(window, &wmInfo);
 	hwnd = wmInfo.info.win.window;
 
-	// Set window styles for transparency with click-through on transparent areas
 	HWND hwndWin = (HWND)hwnd;
-	SetWindowLong(hwndWin, GWL_EXSTYLE, GetWindowLong(hwndWin, GWL_EXSTYLE) | WS_EX_LAYERED);
-
-	// Make black color transparent
+	
+	// Set layered window for transparency and always on top
+	LONG exStyle = GetWindowLong(hwndWin, GWL_EXSTYLE);
+	SetWindowLong(hwndWin, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TOPMOST);
+	
+	// Make black (RGB 0,0,0) transparent using color key
 	SetLayeredWindowAttributes(hwndWin, RGB(0, 0, 0), 0, LWA_COLORKEY);
+	
+	// Lock window position on left side
+	SetWindowPos(hwndWin, HWND_TOPMOST, xPos, yPos, windowWidth, windowHeight, 
+		SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 #endif
-
-	// Create OpenGL context and enable vsync
-	glContext = SDL_GL_CreateContext(window);
-	SDL_GL_MakeCurrent(window, glContext);
-	SDL_GL_SetSwapInterval(1); // Enable vsync
 
 	// Setup ImGui context, core and apply dark theme
 	IMGUI_CHECKVERSION();
@@ -107,8 +120,36 @@ void GuiManager::NewFrame()
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
-	// Display ImGui demo window (for testing purposes)
-	ImGui::ShowDemoWindow();
+	// Get SDL window size
+	int displayW, displayH;
+	SDL_GetWindowSize(window, &displayW, &displayH);
+
+	// Create a fullscreen ImGui window that matches SDL window size
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2((float)displayW, (float)displayH), ImGuiCond_Always);
+	
+	// Begin main window with no title bar, resize, move, or collapse
+	ImGui::Begin("MainWindow", nullptr, 
+		ImGuiWindowFlags_NoTitleBar | 
+		ImGuiWindowFlags_NoResize | 
+		ImGuiWindowFlags_NoMove | 
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+	// Your ImGui content goes here
+	ImGui::Text("PacketInspector");
+	ImGui::Separator();
+	
+	// Example content - replace with your actual UI
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
+		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	
+	// You can add more UI elements here
+	
+	ImGui::End();
+
+	// Optionally show demo window for reference (remove this in production)
+	// ImGui::ShowDemoWindow();
 }
 
 // Render ImGui draw data and swap buffers
@@ -117,8 +158,12 @@ void GuiManager::Render()
 	// Finalize ImGui draw data
 	ImGui::Render();
 
+	// Get current window size
+	int displayW, displayH;
+	SDL_GetWindowSize(window, &displayW, &displayH);
+
 	// Clear the screen with dark gray color and render ImGui
-	glViewport(0, 0, 1280, 720);
+	glViewport(0, 0, displayW, displayH);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
