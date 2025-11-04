@@ -32,7 +32,42 @@ add_executable (PacketInspector
   "gui/GuiManager.h"
   "gui/backends/imgui_impl_sdl2.cpp"
   "gui/backends/imgui_impl_opengl3.cpp"
+  "core/CaptureEngine.h" 
+  "core/PacketParser.h"
 )
+
+# PCAP / NPCAP integration
+set(NPCAP_ROOT "D:/.CODING/C++/Libraries/Npcap" CACHE PATH "Path to Npcap SDK")
+
+if (WIN32)
+find_path(PCAP_INCLUDE_DIR pcap.h HINTS "${NPCAP_ROOT}/Include" ENV NPCAP_ROOT PATH_SUFFIXES Include)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(_npcap_lib_subdir "Lib/x64")
+else()
+set(_npcap_lib_subdir "Lib")
+endif()
+find_library(WPCAP_LIBRARY NAMES wpcap
+HINTS "${NPCAP_ROOT}/${_npcap_lib_subdir}" ENV NPCAP_ROOT
+)
+find_library(PACKET_LIBRARY NAMES Packet
+HINTS "${NPCAP_ROOT}/${_npcap_lib_subdir}" ENV NPCAP_ROOT)
+
+if(NOT PCAP_INCLUDE_DIR OR NOT WPCAP_LIBRARY OR NOT PACKET_LIBRARY)
+message(FATAL_ERROR "Could not find Npcap/WinPcap SDK. Please set NPCAP_ROOT to the Npcap SDK path.")
+endif()
+
+target_include_directories(PacketInspector PRIVATE ${PCAP_INCLUDE_DIR})
+target_link_libraries(PacketInspector PRIVATE "${WPCAP_LIBRARY}" "${PACKET_LIBRARY}"
+Ws2_32 Iphlpapi
+)
+else()
+find_package(Pcap REQUIRED)
+if(PCAP_FOUND)
+target_include_directories(PacketInspector PRIVATE ${PCAP_INCLUDE_DIRS})
+target_link_libraries(PacketInspector PRIVATE ${PCAP_LIBRARIES})
+endif()
+endif()
 
 # Link libraries
 target_link_libraries(PacketInspector PRIVATE
