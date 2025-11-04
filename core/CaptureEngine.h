@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include <pcap.h>
+#include "PacketInfo.h"
+#include <mutex>
+#include <deque>
 
 // Forward declaration of PacketInfo
 struct PacketInfo;
@@ -24,11 +27,16 @@ public:
 
 	bool IsCapturing() const { return capturing; }
 
+	std::vector<PacketInfo> GetRecentPackets();
+
 private:
 	pcap_if_t* allDevices;
 	pcap_t* handle;
 	bool capturing;
 	std::vector<std::string> deviceNames;
+	std::deque<PacketInfo> packetBuffer;
+	std::recursive_mutex packetMutex;
+	const size_t maxPackets = 200;
 
 	void FreeDeviceList();
 	static void PacketHandler(u_char* user, const pcap_pkthdr* header, const u_char* bytes);

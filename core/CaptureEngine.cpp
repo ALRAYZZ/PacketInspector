@@ -124,11 +124,32 @@ void CaptureEngine::FreeDeviceList()
 
 void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const u_char* bytes)
 {
-	// For now count packets
-	static size_t count = 0;
-	++count;
-	if (count % 50 == 0)
+	auto* self = reinterpret_cast<CaptureEngine*>(user);
+	if (!self || !header || !bytes)
 	{
-		std::cout << "Captured packets: " << count << std::endl;
+		return;
 	}
+
+	PacketInfo packet;
+
+	using namespace std::chrono;
+	const auto secs = seconds{ static_cast<long long>(header->ts.tv_sec) };
+	const auto usecs = microseconds{ header->ts.tv_usec };
+	packet.timestamp = system_clock::time_point{ duration_cast<system_clock::duration>(secs + usecs)};
+
+	packet.length = header->len;
+
+	const size_t available = static_cast<size_t>(header->caplen);
+	const size_t toCopy = std::min<size_t>(available, 64u);
+	packet.data.assign(bytes, bytes + toCopy);
+	{
+		std::scoped_lock(self->packetMutex);
+		self->packetBuffer.push_back(std::move(packet));
+		if (self->packetBuffer.size() > self->maxPackets)
+		{
+			self->packetBuffer.pop_front();
+		}
+	}
+
+
 }
