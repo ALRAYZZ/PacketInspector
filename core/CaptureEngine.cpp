@@ -1,5 +1,6 @@
 #include "CaptureEngine.h"
 #include <iostream>
+#include <algorithm>
 
 CaptureEngine::CaptureEngine()
 	: allDevices(nullptr), handle(nullptr), capturing(false)
@@ -143,6 +144,7 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 	const size_t toCopy = std::min<size_t>(available, 64u);
 	packet.data.assign(bytes, bytes + toCopy);
 	{
+		// Prevent concurrent access to packetBuffer
 		std::scoped_lock(self->packetMutex);
 		self->packetBuffer.push_back(std::move(packet));
 		if (self->packetBuffer.size() > self->maxPackets)
@@ -151,5 +153,10 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 		}
 	}
 
+}
 
+std::vector<PacketInfo> CaptureEngine::GetRecentPackets()
+{
+	std::scoped_lock lock(packetMutex);
+	return std::vector<PacketInfo>(packetBuffer.begin(), packetBuffer.end());
 }

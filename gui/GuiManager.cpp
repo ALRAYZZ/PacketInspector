@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_sdl2.h"
 #include "core/CaptureEngine.h"
 #include "panels/CaptureControlPanel.h"
+#include "panels/PacketListPanel.h"
 
 
 #ifdef _WIN32
@@ -16,6 +17,7 @@
 
 std::shared_ptr<CaptureEngine> captureEngine;
 std::unique_ptr<CaptureControlPanel> capturePanel;
+std::unique_ptr<PacketListPanel> packetListPanel;
 
 GuiManager::GuiManager()
 	: window(nullptr), glContext(nullptr), running(true)
@@ -106,6 +108,7 @@ bool GuiManager::Initialize()
 
 	captureEngine = std::make_shared<CaptureEngine>();
 	capturePanel = std::make_unique<CaptureControlPanel>(captureEngine);
+	packetListPanel = std::make_unique<PacketListPanel>(captureEngine);
 
 	return true;
 }
@@ -148,6 +151,8 @@ void GuiManager::NewFrame()
 	ImGui::Separator();
 	
 	capturePanel->Render();
+	ImGui::Separator();
+	packetListPanel->Render();
 	
 
 	ImGui::End();
