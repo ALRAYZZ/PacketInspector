@@ -20,4 +20,9 @@ private:
 	SDL_Window* window;
 	void* glContext;
 	bool running;
+
+
+#ifdef _WIN32
+	void* hwnd; // Windows-specific window handle
+#endif
 };
