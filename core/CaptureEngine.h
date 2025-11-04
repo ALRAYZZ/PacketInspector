@@ -25,14 +25,16 @@ public:
 	bool StartCapture();
 	void StopCapture();
 
-	bool IsCapturing() const { return capturing; }
+	bool IsCapturing() const { return capturing.load(); }
 
 	std::vector<PacketInfo> GetRecentPackets();
 
 private:
 	pcap_if_t* allDevices;
 	pcap_t* handle;
-	bool capturing;
+	std::atomic<bool> capturing;
+	std::thread	captureThread;
+
 	std::vector<std::string> deviceNames;
 	std::deque<PacketInfo> packetBuffer;
 	std::recursive_mutex packetMutex;

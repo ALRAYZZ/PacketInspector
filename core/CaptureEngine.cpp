@@ -76,6 +76,9 @@ bool CaptureEngine::OpenDevice(int index)
 
 void CaptureEngine::CloseDevice()
 {
+	// Ensure capture is stopped before closing the handle
+	StopCapture();
+
 	if (handle)
 	{
 		pcap_close(handle);
@@ -85,33 +88,42 @@ void CaptureEngine::CloseDevice()
 
 bool CaptureEngine::StartCapture()
 {
-	if (!handle)
+	if (!handle || capturing.load())
 	{
 		return false;
 	}
 
-	capturing = true;
+	capturing.store(true);
 
-	// Start async capture loop in same thread for now
-	std::cout << "Starting capture..." << std::endl;
-	if (pcap_loop(handle, 0, PacketHandler, reinterpret_cast<u_char*>(this)) < 0)
+	// Run the pcap loop on a background thread so the GUI stays responsive
+	captureThread = std::thread([this]()
 	{
-		std::cerr << "Error during capture: " << pcap_geterr(handle) << std::endl;
-		capturing = false;
-		return false;
-	}
+		std::cout << "Starting capture..." << std::endl;
+		const int res = pcap_loop(handle, 0, PacketHandler, reinterpret_cast<u_char*>(this));
+		if (res < 0)
+		{
+			std::cerr << "Error during capture: " << pcap_geterr(handle) << std::endl;
+		}
+		capturing.store(false);
+	});
 
 	return true;
 }
 
 void CaptureEngine::StopCapture()
 {
-	if (capturing && handle)
+	if (handle)
 	{
 		pcap_breakloop(handle);
-		capturing = false;
-		std::cout << "Capture stopped." << std::endl;
 	}
+
+	if (captureThread.joinable())
+	{
+		captureThread.join();
+	}
+
+	capturing.store(false);
+	std::cout << "Capture stopped." << std::endl;
 }
 
 void CaptureEngine::FreeDeviceList()
@@ -143,16 +155,16 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 	const size_t available = static_cast<size_t>(header->caplen);
 	const size_t toCopy = std::min<size_t>(available, 64u);
 	packet.data.assign(bytes, bytes + toCopy);
+
 	{
 		// Prevent concurrent access to packetBuffer
-		std::scoped_lock(self->packetMutex);
+		std::scoped_lock lock(self->packetMutex);
 		self->packetBuffer.push_back(std::move(packet));
 		if (self->packetBuffer.size() > self->maxPackets)
 		{
 			self->packetBuffer.pop_front();
 		}
 	}
-
 }
 
 std::vector<PacketInfo> CaptureEngine::GetRecentPackets()
