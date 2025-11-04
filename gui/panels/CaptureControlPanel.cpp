@@ -32,35 +32,43 @@ void CaptureControlPanel::Render()
 	}
 
 	// Device selection list
-	for (int i = 0; i < devices.size(); ++i)
+	for (int i = 0; i < static_cast<int>(devices.size()); ++i)
 	{
+		ImGui::PushID(i); // Ensure unique ID for each selectable
+
 		bool isSelected = (selectedDevice == i);
 		if (ImGui::Selectable(devices[i].c_str(), isSelected))
 		{
 			selectedDevice = i;
 		}
 
-		ImGui::Spacing();
-
-		if (selectedDevice >= 0 && !captureEngine->IsCapturing())
+		// Only show controls for the selected device
+		if (isSelected)
 		{
-			if (ImGui::Button("Start Capture"))
+			ImGui::Spacing();
+
+			if (!captureEngine->IsCapturing())
 			{
-				if (captureEngine->OpenDevice(selectedDevice))
+				if (ImGui::Button("Start capture"))
 				{
-					captureEngine->StartCapture();
+					if (captureEngine->OpenDevice(i))
+					{
+						captureEngine->StartCapture();
+					}
 				}
 			}
-		}
-		else if (captureEngine->IsCapturing())
-		{
-			if (ImGui::Button("Stop Capture"))
+			else
 			{
-				captureEngine->StopCapture();
+				if (ImGui::Button("Stop Capture"))
+				{
+					captureEngine->StopCapture();
+				}
 			}
+
+			ImGui::SameLine();
+			ImGui::Text(captureEngine->IsCapturing() ? "Status: Capturing..." : "Status: Idle.");
 		}
 
-		ImGui::SameLine();
-		ImGui::Text(captureEngine->IsCapturing() ? "Status: Capturing..." : "Status: Idle.");
+		ImGui::PopID();
 	}
 }
