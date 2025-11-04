@@ -14,6 +14,7 @@ CaptureEngine::~CaptureEngine()
 	FreeDeviceList();
 }
 
+// Initialize the capture engine and retrieve available devices
 bool CaptureEngine::Initialize()
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -38,11 +39,13 @@ bool CaptureEngine::Initialize()
 	return !deviceNames.empty();
 }
 
+// Get the list of available device names
 std::vector<std::string> CaptureEngine::GetAvailableDevices() const
 {
 	return deviceNames;
 }
 
+// Open a device by its index in the device list
 bool CaptureEngine::OpenDevice(int index)
 {
 	if (!allDevices)
@@ -74,6 +77,7 @@ bool CaptureEngine::OpenDevice(int index)
 	return true;
 }
 
+// Close the currently opened device
 void CaptureEngine::CloseDevice()
 {
 	// Ensure capture is stopped before closing the handle
@@ -86,6 +90,7 @@ void CaptureEngine::CloseDevice()
 	}
 }
 
+// Start capturing packets on the opened device
 bool CaptureEngine::StartCapture()
 {
 	if (!handle || capturing.load())
@@ -110,6 +115,7 @@ bool CaptureEngine::StartCapture()
 	return true;
 }
 
+// Stop capturing packets
 void CaptureEngine::StopCapture()
 {
 	if (handle)
@@ -126,6 +132,7 @@ void CaptureEngine::StopCapture()
 	std::cout << "Capture stopped." << std::endl;
 }
 
+// Free the device list allocated by pcap_findalldevs
 void CaptureEngine::FreeDeviceList()
 {
 	if (allDevices)
@@ -135,6 +142,7 @@ void CaptureEngine::FreeDeviceList()
 	}
 }
 
+// Static packet handler called by pcap for each captured packet
 void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const u_char* bytes)
 {
 	auto* self = reinterpret_cast<CaptureEngine*>(user);
@@ -167,6 +175,7 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 	}
 }
 
+// Retrieve a copy of recent captured packets
 std::vector<PacketInfo> CaptureEngine::GetRecentPackets()
 {
 	std::scoped_lock lock(packetMutex);
