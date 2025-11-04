@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl2.h"
+#include "core/CaptureEngine.h"
+#include "panels/CaptureControlPanel.h"
 
 
 #ifdef _WIN32
@@ -11,6 +13,9 @@
 #include <Windows.h>
 #endif
 
+
+std::shared_ptr<CaptureEngine> captureEngine;
+std::unique_ptr<CaptureControlPanel> capturePanel;
 
 GuiManager::GuiManager()
 	: window(nullptr), glContext(nullptr), running(true)
@@ -99,6 +104,9 @@ bool GuiManager::Initialize()
 	ImGui_ImplSDL2_InitForOpenGL(window, glContext);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
+	captureEngine = std::make_shared<CaptureEngine>();
+	capturePanel = std::make_unique<CaptureControlPanel>(captureEngine);
+
 	return true;
 }
 
@@ -135,16 +143,13 @@ void GuiManager::NewFrame()
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-	// Your ImGui content goes here
+	// UI Content
 	ImGui::Text("PacketInspector");
 	ImGui::Separator();
 	
-	// Example content - replace with your actual UI
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
-		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	capturePanel->Render();
 	
-	// You can add more UI elements here
-	
+
 	ImGui::End();
 
 	// Optionally show demo window for reference (remove this in production)

@@ -35,7 +35,7 @@ add_executable (PacketInspector
   "core/CaptureEngine.h" 
   "core/CaptureEngine.cpp"
   "core/PacketParser.h"
-)
+ "gui/panels/CaptureControlPanel.h" "gui/panels/CaptureControlPanel.cpp")
 
 # PCAP / NPCAP integration
 set(NPCAP_ROOT "D:/.CODING/C++/Libraries/Npcap" CACHE PATH "Path to Npcap SDK")
@@ -58,7 +58,10 @@ if(NOT PCAP_INCLUDE_DIR OR NOT WPCAP_LIBRARY OR NOT PACKET_LIBRARY)
 message(FATAL_ERROR "Could not find Npcap/WinPcap SDK. Please set NPCAP_ROOT to the Npcap SDK path.")
 endif()
 
-target_include_directories(PacketInspector PRIVATE ${PCAP_INCLUDE_DIR})
+target_include_directories(PacketInspector PRIVATE 
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${PCAP_INCLUDE_DIR}
+)
 target_link_libraries(PacketInspector PRIVATE "${WPCAP_LIBRARY}" "${PACKET_LIBRARY}"
 Ws2_32 Iphlpapi
 )
