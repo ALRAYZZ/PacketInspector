@@ -1,4 +1,5 @@
 #include "CaptureEngine.h"
+#include "PacketParser.h"
 #include <iostream>
 #include <algorithm>
 
@@ -163,7 +164,7 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 	const size_t available = static_cast<size_t>(header->caplen);
 	const size_t toCopy = std::min<size_t>(available, 64u);
 	packet.data.assign(bytes, bytes + toCopy);
-
+	PacketParser::ParsePacket(packet);
 	{
 		// Prevent concurrent access to packetBuffer
 		std::scoped_lock lock(self->packetMutex);

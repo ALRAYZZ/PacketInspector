@@ -35,7 +35,7 @@ add_executable (PacketInspector
   "core/CaptureEngine.h" 
   "core/CaptureEngine.cpp"
   "core/PacketParser.h"
- "gui/panels/CaptureControlPanel.h" "gui/panels/CaptureControlPanel.cpp" "core/PacketInfo.h" "core/PacketInfo.cpp" "gui/panels/PacketListPanel.h" "gui/panels/PacketListPanel.cpp")
+ "gui/panels/CaptureControlPanel.h" "gui/panels/CaptureControlPanel.cpp" "core/PacketInfo.h" "core/PacketInfo.cpp" "gui/panels/PacketListPanel.h" "gui/panels/PacketListPanel.cpp" "core/PacketParser.cpp")
 
 # PCAP / NPCAP integration
 set(NPCAP_ROOT "D:/.CODING/C++/Libraries/Npcap" CACHE PATH "Path to Npcap SDK")

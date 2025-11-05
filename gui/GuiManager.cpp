@@ -15,6 +15,8 @@
 #endif
 
 
+// The difference between shared and unique ptr here is that the CaptureEngine is shared between multiple panels
+// Unique is only when one owner exists, its the recommended default, but shared is needed for shared ownership
 std::shared_ptr<CaptureEngine> captureEngine;
 std::unique_ptr<CaptureControlPanel> capturePanel;
 std::unique_ptr<PacketListPanel> packetListPanel;
