@@ -2,6 +2,8 @@
 #include "PacketParser.h"
 #include <iostream>
 #include <algorithm>
+#include <map>
+#include <tuple>
 
 CaptureEngine::CaptureEngine()
 	: allDevices(nullptr), handle(nullptr), capturing(false)
@@ -189,4 +191,23 @@ std::vector<PacketInfo> CaptureEngine::GetRecentPackets()
 {
 	std::scoped_lock lock(packetMutex);
 	return std::vector<PacketInfo>(packetBuffer.begin(), packetBuffer.end());
+}
+
+std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> CaptureEngine::GetGroupedPackets(bool incomingOnly)
+{
+	std::scoped_lock lock(packetMutex);
+
+	std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> groupedPackets;
+
+	for (const auto& packet : packetBuffer)
+	{
+		// Filter based on direction
+		if (incomingOnly && !packet.incoming) continue;
+		if (!incomingOnly && packet.incoming) continue;
+
+		// Group by source address and port
+		auto key = std::make_tuple(packet.srcAddr, packet.srcPort);
+		groupedPackets[key].push_back(packet);
+	}
+	return groupedPackets;
 }

@@ -6,7 +6,7 @@
 struct PacketInfo
 {
 	std::chrono::system_clock::time_point timestamp;
-	uint32_t length;
+	uint32_t length = 0;
 	std::vector<uint8_t> data;
 
 	std::string srcAddr;
@@ -17,4 +17,6 @@ struct PacketInfo
 
 	std::string GetTimeString() const;
 	std::string GetHexPreview(size_t maxBytes = 16) const;
+
+	bool incoming = false; // true = received, false = sent
 };

@@ -5,9 +5,10 @@
 #include "PacketInfo.h"
 #include <mutex>
 #include <deque>
-
-// Forward declaration of PacketInfo
-struct PacketInfo;
+#include <map>
+#include <tuple>
+#include <atomic>
+#include <thread>
 
 class CaptureEngine
 {
@@ -28,6 +29,7 @@ public:
 	bool IsCapturing() const { return capturing.load(); }
 
 	std::vector<PacketInfo> GetRecentPackets();
+	std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> GetGroupedPackets(bool incomingOnly);
 
 private:
 	pcap_if_t* allDevices;

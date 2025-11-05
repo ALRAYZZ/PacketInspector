@@ -10,4 +10,12 @@ public:
 
 private:
 	std::shared_ptr<CaptureEngine> captureEngine;
+
+	// Track selected flow for detail view
+	std::string selectedFlowKey;
+	bool showGroupedView = true;
+
+	void RenderGroupedView();
+	void RenderDetailView();
+	void RenderAllPacketsView();
 };
