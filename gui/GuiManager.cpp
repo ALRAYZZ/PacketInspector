@@ -157,32 +157,131 @@ void GuiManager::NewFrame()
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-	// Custom title bar area with button color
+	// Render the tab bar
+	RenderTabBar(displayW);
+
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	// Render content based on active tab
+	switch (activeTab)
+	{
+		case AppTab::PacketInspector:
+			RenderPacketInspectorTab();
+			break;
+		case AppTab::PingTool:
+			RenderPingToolTab();
+			break;
+	}
+
+	ImGui::End();
+
+	ImGui::PopStyleVar(3);
+}
+
+// Render the tab bar with application tabs
+void GuiManager::RenderTabBar(int displayW)
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 0.0f));
+
+	// Get button color for styling
 	ImVec4 buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-	ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
-	ImGui::TextColored(buttonColor, "PacketInspector");
-	ImGui::PopFont();
-	
-	ImGui::SameLine(displayW - 80.0f);
+	ImVec4 buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+	ImVec4 buttonActiveColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+
+	// Packet Inspector Tab
+	if (activeTab == AppTab::PacketInspector)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+	}
+	else
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
+		ImGui::PushStyleColor(ImGuiCol_Text, buttonColor);
+	}
+
+	if (ImGui::Button("Packet Inspector"))
+	{
+		activeTab = AppTab::PacketInspector;
+	}
+	ImGui::PopStyleColor(2);
+
+	ImGui::SameLine();
+
+	// Ping Tool Tab
+	if (activeTab == AppTab::PingTool)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+	}
+	else
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
+		ImGui::PushStyleColor(ImGuiCol_Text, buttonColor);
+	}
+
+	if (ImGui::Button("Ping Tool"))
+	{
+		activeTab = AppTab::PingTool;
+	}
+	ImGui::PopStyleColor(2);
+
+	// Exit button on the far right
+	ImGui::SameLine(displayW - 95.0f);
 	if (ImGui::Button("Exit", ImVec2(60, 0)))
 	{
 		running = false;
 	}
 
-	ImGui::Separator();
+	ImGui::PopStyleVar(2);
+}
 
-	// UI Content
+// Render Packet Inspector tab content
+void GuiManager::RenderPacketInspectorTab()
+{
 	capturePanel->Render();
 	ImGui::Separator();
 	packetListPanel->Render();
-	
-	ImGui::End();
-	
-	ImGui::PopStyleVar(3);
+}
 
-	// Optionally show demo window for reference (remove this in production)
-	// ImGui::ShowDemoWindow();
+// Render Ping Tool tab content (placeholder for now)
+void GuiManager::RenderPingToolTab()
+{
+	ImGui::Text("Ping Tool");
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	ImGui::Text("This feature is under development.");
+	ImGui::Spacing();
+
+	static char ipAddress[128] = "8.8.8.8";
+	ImGui::InputText("IP Address", ipAddress, sizeof(ipAddress));
+
+	ImGui::Spacing();
+	if (ImGui::Button("Ping"))
+	{
+		// TODO: Implement ping functionality
+		ImGui::OpenPopup("Not implemented");
+	}
+
+	// Popuo modal
+	if (ImGui::BeginPopupModal("Not implemented", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Ping functionality is not implemented yet.");
+		ImGui::Spacing();
+		if (ImGui::Button("OK", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+	ImGui::TextWrapped("Future features:\n- Ping with custom packet count\n- Display latency statistics\n- Packet loss percentage\n- Traceroute integration");
 }
 
 // Render ImGui draw data and swap buffers

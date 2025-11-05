@@ -17,9 +17,20 @@ public:
 
 
 private:
+	enum class AppTab
+	{
+		PacketInspector,
+		PingTool
+	};
+
 	SDL_Window* window;
 	void* glContext;
 	bool running;
+	AppTab activeTab;
+
+	void RenderTabBar(int displayW);
+	void RenderPacketInspectorTab();
+	void RenderPingToolTab();
 
 
 #ifdef _WIN32
