@@ -129,8 +129,12 @@ void CaptureEngine::StopCapture()
 		captureThread.join();
 	}
 
+	if (capturing.load())
+	{
+		std::cout << "Capture stopped." << std::endl;
+	}
+
 	capturing.store(false);
-	std::cout << "Capture stopped." << std::endl;
 }
 
 // Free the device list allocated by pcap_findalldevs
