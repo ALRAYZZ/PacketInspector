@@ -92,15 +92,15 @@ bool GuiManager::Initialize()
 	LONG style = GetWindowLong(hwndWin, GWL_STYLE);
 	SetWindowLong(hwndWin, GWL_STYLE, style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU));
 	
-	// Set layered window for transparency and always on top
+	// Set layered window for transparency (removed WS_EX_TOPMOST)
 	LONG exStyle = GetWindowLong(hwndWin, GWL_EXSTYLE);
-	SetWindowLong(hwndWin, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TOPMOST);
+	SetWindowLong(hwndWin, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
 	
 	// Make black (RGB 0,0,0) transparent using color key
 	SetLayeredWindowAttributes(hwndWin, RGB(0, 0, 0), 0, LWA_COLORKEY);
 	
-	// Update window position and size
-	SetWindowPos(hwndWin, HWND_TOPMOST, xPos, yPos, windowWidth, windowHeight, 
+	// Update window position and size (changed HWND_TOPMOST to HWND_NOTOPMOST)
+	SetWindowPos(hwndWin, HWND_NOTOPMOST, xPos, yPos, windowWidth, windowHeight, 
 		SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 #endif
 
