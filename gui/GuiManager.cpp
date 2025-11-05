@@ -51,23 +51,24 @@ bool GuiManager::Initialize()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-	// Get screen height for full vertical coverage
+	// Get screen dimensions for centering
 	SDL_DisplayMode displayMode;
 	SDL_GetCurrentDisplayMode(0, &displayMode);
+	int screenWidth = displayMode.w;
 	int screenHeight = displayMode.h;
 
-	// Create vertical window on left side of screen
-	int windowWidth = 800;  // Width of the sidebar
-	int windowHeight = screenHeight;  // Full screen height
-	int xPos = 0;  // Left edge of screen
-	int yPos = 0;  // Top of screen
+	// Create larger centered window (80% of screen size)
+	int windowWidth = static_cast<int>(screenWidth * 0.8f);
+	int windowHeight = static_cast<int>(screenHeight * 0.8f);
+	int xPos = (screenWidth - windowWidth) / 2;
+	int yPos = (screenHeight - windowHeight) / 2;
 
 	window = SDL_CreateWindow("PacketInspector",
 		xPos,
 		yPos,
 		windowWidth,
 		windowHeight,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+		SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_ALLOW_HIGHDPI);
 	if (!window)
 	{
 		return false;
@@ -87,6 +88,10 @@ bool GuiManager::Initialize()
 
 	HWND hwndWin = (HWND)hwnd;
 	
+	// Remove all window styles to hide the window frame completely
+	LONG style = GetWindowLong(hwndWin, GWL_STYLE);
+	SetWindowLong(hwndWin, GWL_STYLE, style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU));
+	
 	// Set layered window for transparency and always on top
 	LONG exStyle = GetWindowLong(hwndWin, GWL_EXSTYLE);
 	SetWindowLong(hwndWin, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TOPMOST);
@@ -94,7 +99,7 @@ bool GuiManager::Initialize()
 	// Make black (RGB 0,0,0) transparent using color key
 	SetLayeredWindowAttributes(hwndWin, RGB(0, 0, 0), 0, LWA_COLORKEY);
 	
-	// Lock window position on left side
+	// Update window position and size
 	SetWindowPos(hwndWin, HWND_TOPMOST, xPos, yPos, windowWidth, windowHeight, 
 		SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 #endif
@@ -137,33 +142,45 @@ void GuiManager::NewFrame()
 	int displayW, displayH;
 	SDL_GetWindowSize(window, &displayW, &displayH);
 
-	// Create a fullscreen ImGui window that matches SDL window size
+	// Create a fullscreen ImGui window that matches SDL window size with custom styling
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2((float)displayW, (float)displayH), ImGuiCond_Always);
 	
+	// Custom window styling for minimal design
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
+	
 	// Begin main window with no title bar, resize, move, or collapse
 	ImGui::Begin("MainWindow", nullptr, 
+		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoResize | 
 		ImGuiWindowFlags_NoMove | 
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-	// UI Content
-	ImGui::Text("PacketInspector");
-	ImGui::Separator();
-
-	if (ImGui::Button("Exit"))
+	// Custom title bar area
+	ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+	ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "PacketInspector");
+	ImGui::PopFont();
+	
+	ImGui::SameLine(displayW - 80.0f);
+	if (ImGui::Button("Exit", ImVec2(60, 0)))
 	{
 		running = false;
 	}
+
 	ImGui::Separator();
-	
+
+	// UI Content
 	capturePanel->Render();
 	ImGui::Separator();
 	packetListPanel->Render();
 	
-
 	ImGui::End();
+	
+	ImGui::PopStyleVar(3);
 
 	// Optionally show demo window for reference (remove this in production)
 	// ImGui::ShowDemoWindow();
@@ -179,7 +196,7 @@ void GuiManager::Render()
 	int displayW, displayH;
 	SDL_GetWindowSize(window, &displayW, &displayH);
 
-	// Clear the screen with dark gray color and render ImGui
+	// Clear the screen with black color (transparent via color key) and render ImGui
 	glViewport(0, 0, displayW, displayH);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
