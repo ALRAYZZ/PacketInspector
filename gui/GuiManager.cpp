@@ -160,7 +160,10 @@ void GuiManager::NewFrame()
 	// Render the tab bar
 	RenderTabBar(displayW);
 
+	// Visual separator with spacing for better hierarchy
+	ImGui::Spacing();
 	ImGui::Separator();
+	ImGui::Spacing();
 	ImGui::Spacing();
 
 	// Render content based on active tab
@@ -182,60 +185,78 @@ void GuiManager::NewFrame()
 // Render the tab bar with application tabs
 void GuiManager::RenderTabBar(int displayW)
 {
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 8.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 0.0f));
+	// Moderate padding for tabs - not too big, but prominent
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(16.0f, 10.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-	// Get button color for styling
+	// Get button colors for styling
 	ImVec4 buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 	ImVec4 buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
 	ImVec4 buttonActiveColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+	
+	// Enhanced colors for better visibility without being overwhelming
+	ImVec4 activeTabColor = ImVec4(buttonActiveColor.x * 1.3f, buttonActiveColor.y * 1.3f, buttonActiveColor.z * 1.3f, 1.0f);
+	ImVec4 inactiveTabTextColor = ImVec4(0.65f, 0.65f, 0.65f, 1.0f);
+	ImVec4 activeTabTextColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	ImVec4 inactiveHoverColor = ImVec4(0.22f, 0.22f, 0.22f, 0.7f);
 
 	// Packet Inspector Tab
 	if (activeTab == AppTab::PacketInspector)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, buttonActiveColor);
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, activeTabTextColor);
 	}
 	else
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
-		ImGui::PushStyleColor(ImGuiCol_Text, buttonColor);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.12f, 0.3f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, inactiveHoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, buttonActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, inactiveTabTextColor);
 	}
 
 	if (ImGui::Button("Packet Inspector"))
 	{
 		activeTab = AppTab::PacketInspector;
 	}
-	ImGui::PopStyleColor(2);
+	ImGui::PopStyleColor(4);
 
 	ImGui::SameLine();
 
 	// Ping Tool Tab
 	if (activeTab == AppTab::PingTool)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, buttonActiveColor);
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, activeTabTextColor);
 	}
 	else
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
-		ImGui::PushStyleColor(ImGuiCol_Text, buttonColor);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.12f, 0.3f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, inactiveHoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, buttonActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, inactiveTabTextColor);
 	}
 
 	if (ImGui::Button("Ping Tool"))
 	{
 		activeTab = AppTab::PingTool;
 	}
-	ImGui::PopStyleColor(2);
+	ImGui::PopStyleColor(4);
 
-	// Exit button on the far right
+	// Exit button on the far right with normal styling
 	ImGui::SameLine(displayW - 95.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 8.0f));
 	if (ImGui::Button("Exit", ImVec2(60, 0)))
 	{
 		running = false;
 	}
+	ImGui::PopStyleVar();
 
-	ImGui::PopStyleVar(2);
+	ImGui::PopStyleVar(3);
 }
 
 // Render Packet Inspector tab content
@@ -266,7 +287,7 @@ void GuiManager::RenderPingToolTab()
 		ImGui::OpenPopup("Not implemented");
 	}
 
-	// Popuo modal
+	// Popup modal
 	if (ImGui::BeginPopupModal("Not implemented", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("Ping functionality is not implemented yet.");
