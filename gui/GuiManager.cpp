@@ -151,6 +151,12 @@ void GuiManager::NewFrame()
 	// UI Content
 	ImGui::Text("PacketInspector");
 	ImGui::Separator();
+
+	if (ImGui::Button("Exit"))
+	{
+		running = false;
+	}
+	ImGui::Separator();
 	
 	capturePanel->Render();
 	ImGui::Separator();
@@ -186,14 +192,30 @@ void GuiManager::Render()
 // Shutdown ImGui and SDL subsystems and clean up resources
 void GuiManager::Shutdown()
 {
+	// Clean up panels and capture engine
+	packetListPanel.reset();
+	capturePanel.reset();
+	captureEngine.reset();
+
 	// Clean up ImGui and backends and context
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
+	if (ImGui::GetCurrentContext())
+	{
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+	}
 
 	// Clean up SDL resources
-	if (glContext) SDL_GL_DeleteContext(glContext);
-	if (window) SDL_DestroyWindow(window);
+	if (glContext)
+	{
+		SDL_GL_DeleteContext(glContext);
+		glContext = nullptr;
+	}
+	if (window)
+	{
+		SDL_DestroyWindow(window);
+		window = nullptr;
+	}
 
 	SDL_Quit();
 }
