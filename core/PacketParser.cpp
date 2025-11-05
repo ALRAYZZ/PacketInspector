@@ -60,6 +60,25 @@ static std::string macToStr(const uint8_t* mac)
 	return buf;
 }
 
+static bool IsLocalAddress(const std::string& ip)
+{
+	// Check for common private IP ranges
+	if (ip.rfind("10.", 0) == 0) return true;
+	if (ip.rfind("192.168.", 0) == 0) return true;
+	if (ip.rfind("127.", 0) == 0) return true;
+	if (ip.rfind("172.", 0) == 0)
+	{
+		// Check if its in 172.16.0.0 to 172.31.255.255 range
+		size_t dot = ip.find('.', 4);
+		if (dot != std::string::npos)
+		{
+			int second = std::stoi(ip.substr(4, dot - 4));
+			if (second >= 16 && second <= 31) return true;
+		}
+	}
+	return false;
+}
+
 void PacketParser::ParsePacket(PacketInfo& pkt)
 {
 	if (pkt.data.size() < sizeof(EthernetHeader)) return;
@@ -113,5 +132,14 @@ void PacketParser::ParsePacket(PacketInfo& pkt)
 			pkt.protocol = "Other";
 			break;
 	}
+
+	// Determine packet direction: incoming if source IP is not local
+	bool srcIsLocal = IsLocalAddress(pkt.srcAddr);
+	bool dstIsLocal = IsLocalAddress(pkt.dstAddr);
+
+	// If source is external and destination local -> incoming
+	// If source is local and destination external -> outgoing
+
+	pkt.incoming = !srcIsLocal && dstIsLocal;
 }
 
