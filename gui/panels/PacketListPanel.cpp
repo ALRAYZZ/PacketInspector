@@ -10,7 +10,7 @@ void PacketListPanel::Render()
 {
 	ImGui::SeparatorText("Captured Packets");
 
-	auto packets = captureEngine->GetRecentPackets();
+	const auto packets = captureEngine->GetRecentPackets();
 
 	if (packets.empty())
 	{
@@ -18,31 +18,48 @@ void PacketListPanel::Render()
 		return;
 	}
 
-	ImGui::BeginChild("PacketTable", ImVec2(0, 300), true, ImGuiWindowFlags_HorizontalScrollbar);
-	ImGui::Columns(5, "packets");
-	ImGui::Text("Time"); ImGui::NextColumn();
-	ImGui::Text("Source"); ImGui::NextColumn();
-	ImGui::Text("Destination"); ImGui::NextColumn();
-	ImGui::Text("Protocol"); ImGui::NextColumn();
-	ImGui::Text("Length"); ImGui::NextColumn();
-	ImGui::Separator();
-
-	for (const auto& pkt : packets)
+	if (ImGui::BeginTable("PacketsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0, 400)))
 	{
-		ImGui::Text("%s", pkt.GetTimeString().c_str()); ImGui::NextColumn();
+		ImGui::TableSetupScrollFreeze(0, 1); // Header row always visible
+		ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+		ImGui::TableSetupColumn("Protocol", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+		ImGui::TableSetupColumn("Source", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Destination", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Length", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+		ImGui::TableHeadersRow();
 
-		std::string src = pkt.srcAddr.empty() ? "-" : pkt.srcAddr;
-		if (pkt.srcPort) src += ":" + std::to_string(pkt.srcPort);
-		ImGui::Text("%s", src.c_str()); ImGui::NextColumn();
+		for (const auto& pkt : packets)
+		{
+			ImGui::TableNextRow();
 
-		std::string dst = pkt.dstAddr.empty() ? "-" : pkt.dstAddr;
-		if (pkt.dstPort) dst += ":" + std::to_string(pkt.dstPort);
-		ImGui::Text("%s", dst.c_str()); ImGui::NextColumn();
+			// Format timestamp
+			auto timeT = std::chrono::system_clock::to_time_t(pkt.timestamp);
+			std::tm tm;
 
-		ImGui::Text("%s", pkt.protocol.c_str()); ImGui::NextColumn();
-		ImGui::Text("%u", pkt.length); ImGui::NextColumn();
+#ifdef _WIN32
+			localtime_s(&tm, &timeT);
+#else
+			localtime_r(&timeT, &tm);
+#endif
+			std::ostringstream timeStr;
+			timeStr << std::put_time(&tm, "%H:%M:%S");
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::TextUnformatted(timeStr.str().c_str());
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::TextUnformatted(pkt.protocol.c_str());
+
+			ImGui::TableSetColumnIndex(2);
+			ImGui::TextUnformatted(pkt.srcAddr.c_str());
+
+			ImGui::TableSetColumnIndex(3);
+			ImGui::TextUnformatted(pkt.dstAddr.c_str());
+
+			ImGui::TableSetColumnIndex(4);
+			ImGui::Text("%u", pkt.length);
+		}
+
+		ImGui::EndTable();
 	}
-
-	ImGui::Columns(1);
-	ImGui::EndChild();
 }
