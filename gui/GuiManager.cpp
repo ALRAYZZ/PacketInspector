@@ -152,17 +152,16 @@ void GuiManager::NewFrame()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15.0f, 15.0f));
 	
 	// Begin main window with no title bar, resize, move, or collapse
-	ImGui::Begin("MainWindow", nullptr, 
-		ImGuiWindowFlags_NoTitleBar |
+	ImGui::Begin("Packet Analyzer", nullptr, 
 		ImGuiWindowFlags_NoResize | 
-		ImGuiWindowFlags_NoMove | 
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-	// Custom title bar area
+	// Custom title bar area with button color
+	ImVec4 buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 	ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
-	ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "PacketInspector");
+	ImGui::TextColored(buttonColor, "PacketInspector");
 	ImGui::PopFont();
 	
 	ImGui::SameLine(displayW - 80.0f);
