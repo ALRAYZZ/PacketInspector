@@ -106,7 +106,8 @@ bool CaptureEngine::StartCapture()
 	{
 		std::cout << "Starting capture..." << std::endl;
 		const int res = pcap_loop(handle, 0, PacketHandler, reinterpret_cast<u_char*>(this));
-		if (res < 0)
+		// pcap_loop returns -2 when pcap_breakloop is called, which is not an error
+		if (res < 0 && res != -2)
 		{
 			std::cerr << "Error during capture: " << pcap_geterr(handle) << std::endl;
 		}
@@ -119,6 +120,8 @@ bool CaptureEngine::StartCapture()
 // Stop capturing packets
 void CaptureEngine::StopCapture()
 {
+	bool wasCapturing = capturing.load();
+
 	if (handle)
 	{
 		pcap_breakloop(handle);
@@ -129,12 +132,13 @@ void CaptureEngine::StopCapture()
 		captureThread.join();
 	}
 
-	if (capturing.load())
+	capturing.store(false);
+
+	// Log message based on whether capturing was active
+	if (wasCapturing)
 	{
 		std::cout << "Capture stopped." << std::endl;
 	}
-
-	capturing.store(false);
 }
 
 // Free the device list allocated by pcap_findalldevs
