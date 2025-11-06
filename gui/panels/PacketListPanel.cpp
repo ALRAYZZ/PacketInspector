@@ -152,9 +152,12 @@ void PacketListPanel::RenderDetailView()
 			ImGui::TableSetupColumn("Length", ImGuiTableColumnFlags_WidthFixed, 60.0f);
 			ImGui::TableHeadersRow();
 
+			int rowIndex = 0;
 			for (const auto& pkt : packets)
 			{
 				ImGui::TableNextRow();
+
+				ImGui::PushID(rowIndex);
 
 				// Format timestamp
 				auto timeT = std::chrono::system_clock::to_time_t(pkt.timestamp);
@@ -165,23 +168,36 @@ void PacketListPanel::RenderDetailView()
 #else
 				localtime_r(&timeT, &tm);
 #endif
-				std::ostringstream timeStr;
-				timeStr << std::put_time(&tm, "%H:%M:%S");
+				char buf[16];
+				strftime(buf, sizeof(buf), "%H:%M:%S", &tm);
 
+
+				// Column 0: Time (selectable)
 				ImGui::TableSetColumnIndex(0);
-				ImGui::TextUnformatted(timeStr.str().c_str());
+				bool clicked = ImGui::Selectable(buf, selectedPacket.has_value() && selectedPacket->timestamp == pkt.timestamp, ImGuiSelectableFlags_SpanAllColumns);
+				if (clicked)
+				{
+					selectedPacket = pkt;
+				}
 
+				// Column 1: Protocol
 				ImGui::TableSetColumnIndex(1);
 				ImGui::TextUnformatted(pkt.protocol.c_str());
 
+				// Column 2: Source
 				ImGui::TableSetColumnIndex(2);
 				ImGui::Text("%s:%u", pkt.srcAddr.c_str(), pkt.srcPort);
 
+				// Column 3: Destination
 				ImGui::TableSetColumnIndex(3);
 				ImGui::Text("%s:%u", pkt.dstAddr.c_str(), pkt.dstPort);
 
+				// Column 4: Length
 				ImGui::TableSetColumnIndex(4);
 				ImGui::Text("%u", pkt.length);
+
+				ImGui::PopID();
+				rowIndex++;
 			}
 
 			ImGui::EndTable();
@@ -246,4 +262,12 @@ void PacketListPanel::RenderAllPacketsView()
 			ImGui::Text("%u", pkt.length);
 		}
 	}
+}
+
+
+
+// Returns the currently selected packet, if any
+std::optional<PacketInfo> PacketListPanel::GetSelectedPacket() const
+{
+	return selectedPacket;
 }

@@ -7,6 +7,7 @@
 #include "core/CaptureEngine.h"
 #include "panels/CaptureControlPanel.h"
 #include "panels/PacketListPanel.h"
+#include "panels/PacketDetailPanel.h"
 
 
 #ifdef _WIN32
@@ -20,9 +21,10 @@
 std::shared_ptr<CaptureEngine> captureEngine;
 std::unique_ptr<CaptureControlPanel> capturePanel;
 std::unique_ptr<PacketListPanel> packetListPanel;
+std::unique_ptr<PacketDetailPanel> packetDetailPanel;
 
 GuiManager::GuiManager()
-	: window(nullptr), glContext(nullptr), running(true)
+	: window(nullptr), glContext(nullptr), running(true), activeTab(AppTab::PacketInspector)
 #ifdef _WIN32
 	, hwnd(nullptr)
 #endif
@@ -116,6 +118,11 @@ bool GuiManager::Initialize()
 	captureEngine = std::make_shared<CaptureEngine>();
 	capturePanel = std::make_unique<CaptureControlPanel>(captureEngine);
 	packetListPanel = std::make_unique<PacketListPanel>(captureEngine);
+	// Lambda passes the selected packet from PacketListPanel to PacketDetailPanel
+	packetDetailPanel = std::make_unique<PacketDetailPanel>([this]() -> std::optional<PacketInfo>
+		{
+			return packetListPanel ? packetListPanel->GetSelectedPacket() : std::optional<PacketInfo>{};
+		});
 
 	return true;
 }
@@ -185,17 +192,17 @@ void GuiManager::NewFrame()
 // Render the tab bar with application tabs
 void GuiManager::RenderTabBar(int displayW)
 {
-	// Moderate padding for tabs - not too big, but prominent
+	// Padding
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(16.0f, 10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 0.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-	// Get button colors for styling
+	// Get button colors
 	ImVec4 buttonColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 	ImVec4 buttonHoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
 	ImVec4 buttonActiveColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
 	
-	// Enhanced colors for better visibility without being overwhelming
+	// UI colors for active/inactive tabs
 	ImVec4 activeTabColor = ImVec4(buttonActiveColor.x * 1.3f, buttonActiveColor.y * 1.3f, buttonActiveColor.z * 1.3f, 1.0f);
 	ImVec4 inactiveTabTextColor = ImVec4(0.65f, 0.65f, 0.65f, 1.0f);
 	ImVec4 activeTabTextColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -264,7 +271,11 @@ void GuiManager::RenderPacketInspectorTab()
 {
 	capturePanel->Render();
 	ImGui::Separator();
+
+
 	packetListPanel->Render();
+	ImGui::Spacing();
+	packetDetailPanel->Render();
 }
 
 // Render Ping Tool tab content (placeholder for now)
