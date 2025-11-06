@@ -5,9 +5,11 @@
 #include <ctime>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include <IcmpAPI.h>
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
 #else
