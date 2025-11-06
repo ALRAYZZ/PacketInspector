@@ -42,6 +42,7 @@ set(NPCAP_ROOT "D:/.CODING/C++/Libraries/Npcap" CACHE PATH "Path to Npcap SDK")
 
 if (WIN32)
 find_path(PCAP_INCLUDE_DIR pcap.h HINTS "${NPCAP_ROOT}/Include" ENV NPCAP_ROOT PATH_SUFFIXES Include)
+target_link_libraries(PacketInspector PRIVATE iphlpapi ws2_32)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 set(_npcap_lib_subdir "Lib/x64")

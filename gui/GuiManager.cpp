@@ -8,6 +8,8 @@
 #include "panels/CaptureControlPanel.h"
 #include "panels/PacketListPanel.h"
 #include "panels/PacketDetailPanel.h"
+#include "core/PingEngine.h"
+#include "panels/PingToolPanel.h"
 
 
 #ifdef _WIN32
@@ -19,9 +21,12 @@
 // The difference between shared and unique ptr here is that the CaptureEngine is shared between multiple panels
 // Unique is only when one owner exists, its the recommended default, but shared is needed for shared ownership
 std::shared_ptr<CaptureEngine> captureEngine;
+std::shared_ptr<PingEngine> pingEngine;
+
 std::unique_ptr<CaptureControlPanel> capturePanel;
 std::unique_ptr<PacketListPanel> packetListPanel;
 std::unique_ptr<PacketDetailPanel> packetDetailPanel;
+std::unique_ptr<PingToolPanel> pingToolPanel;
 
 GuiManager::GuiManager()
 	: window(nullptr), glContext(nullptr), running(true), activeTab(AppTab::PacketInspector)
@@ -123,6 +128,9 @@ bool GuiManager::Initialize()
 		{
 			return packetListPanel ? packetListPanel->GetSelectedPacket() : std::optional<PacketInfo>{};
 		});
+
+	pingEngine = std::make_shared<PingEngine>();
+	pingToolPanel = std::make_unique<PingToolPanel>(pingEngine);
 
 	return true;
 }
@@ -294,39 +302,10 @@ void GuiManager::RenderPacketInspectorTab()
 // Render Ping Tool tab content (placeholder for now)
 void GuiManager::RenderPingToolTab()
 {
-	ImGui::Text("Ping Tool");
-	ImGui::Separator();
-	ImGui::Spacing();
-
-	ImGui::Text("This feature is under development.");
-	ImGui::Spacing();
-
-	static char ipAddress[128] = "8.8.8.8";
-	ImGui::InputText("IP Address", ipAddress, sizeof(ipAddress));
-
-	ImGui::Spacing();
-	if (ImGui::Button("Ping"))
+	if (pingToolPanel)
 	{
-		// TODO: Implement ping functionality
-		ImGui::OpenPopup("Not implemented");
+		pingToolPanel->Render();
 	}
-
-	// Popup modal
-	if (ImGui::BeginPopupModal("Not implemented", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Ping functionality is not implemented yet.");
-		ImGui::Spacing();
-		if (ImGui::Button("OK", ImVec2(120, 0)))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	ImGui::TextWrapped("Future features:\n- Ping with custom packet count\n- Display latency statistics\n- Packet loss percentage\n- Traceroute integration");
 }
 
 // Render ImGui draw data and swap buffers
@@ -356,6 +335,9 @@ void GuiManager::Shutdown()
 	packetListPanel.reset();
 	capturePanel.reset();
 	captureEngine.reset();
+	pingToolPanel.reset();
+	pingEngine.reset();
+	packetDetailPanel.reset();
 
 	// Clean up ImGui and backends and context
 	if (ImGui::GetCurrentContext())
