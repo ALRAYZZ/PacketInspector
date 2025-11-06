@@ -27,9 +27,36 @@ void PacketDetailPanel::Render()
 	RenderHeaderInfo(pkt);
 
 	ImGui::Separator();
+	ImGui::Spacing();
 
-	// Hex + ASCII dump
-	RenderHexDump(pkt);
+	// Collapsible structured layers
+	if (ImGui::CollapsingHeader("Ethernet Layer", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::BulletText("Source MAC: %s", pkt.etherSrc.c_str());
+		ImGui::BulletText("Destination MAC: %s", pkt.etherDst.c_str());
+		ImGui::BulletText("EtherType: %s", pkt.etherTypeStr.c_str());
+	}
+
+	if (ImGui::CollapsingHeader("IPv4 Layer", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::BulletText("Source IP: %s", pkt.srcIP.c_str());
+		ImGui::BulletText("Destination IP: %s", pkt.dstIP.c_str());
+		ImGui::BulletText("TTL: %u", pkt.ttl);
+		ImGui::BulletText("Protocol: %s", pkt.transportProtocol.c_str());
+	}
+
+	if (ImGui::CollapsingHeader("Transport Layer", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::BulletText("Transport Protocol: %s", pkt.transportProtocol.c_str());
+		ImGui::BulletText("Source Port: %u", pkt.srcPort);
+		ImGui::BulletText("Destination Port: %u", pkt.dstPort);
+		ImGui::BulletText("Direction: %s", pkt.incoming ? "Incoming" : "Outgoing");
+	}
+
+	if (ImGui::CollapsingHeader("Raw Data (Hex / ASCII Dump)", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		RenderHexDump(pkt);
+	}
 
 	ImGui::EndChild();
 }
@@ -37,20 +64,16 @@ void PacketDetailPanel::Render()
 void PacketDetailPanel::RenderHeaderInfo(const PacketInfo& pkt)
 {
 	ImGui::Text("Timestamp: %s", pkt.GetTimeString().c_str());
-	ImGui::Text("Protocol: %s", pkt.protocol.c_str());
-
-	ImGui::SameLine();
 	ImGui::Text("Length: %u bytes", pkt.length);
-
 	ImGui::Spacing();
+
 	ImGui::TextUnformatted("Addresses:");
-	ImGui::BulletText("Source: %s:%u", pkt.srcAddr.c_str(), pkt.srcPort);
-	ImGui::BulletText("Destination: %s:%u", pkt.dstAddr.c_str(), pkt.dstPort);
+	ImGui::BulletText("Source: %s:%u", pkt.srcIP.c_str(), pkt.srcPort);
+	ImGui::BulletText("Destination: %s:%u", pkt.dstIP.c_str(), pkt.dstPort);
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted("Notes:");
 	ImGui::TextWrapped("If fields are empty, packet parsing may not have detected the layer.");
-
 	ImGui::Spacing();
 }
 
@@ -96,8 +119,6 @@ void PacketDetailPanel::RenderHexDump(const PacketInfo& pkt, size_t bytesPerLine
 		}
 
 		ImGui::TextUnformatted(hex.str().c_str());
-		ImGui::SameLine();
-		ImGui::TextUnformatted(" ");
 		ImGui::SameLine();
 		ImGui::TextUnformatted(ascii.str().c_str());
 	}

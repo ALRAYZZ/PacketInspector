@@ -206,7 +206,7 @@ std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> CaptureEngi
 		if (!incomingOnly && packet.incoming) continue;
 
 		// Group by source address and port
-		auto key = std::make_tuple(packet.srcAddr, packet.srcPort);
+		auto key = std::make_tuple(packet.srcIP, packet.srcPort);
 		groupedPackets[key].push_back(packet);
 	}
 	return groupedPackets;

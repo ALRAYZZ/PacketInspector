@@ -72,7 +72,7 @@ void PacketListPanel::RenderGroupedView()
 			ImGui::TableSetColumnIndex(3);
 			if (!packets.empty())
 			{
-				ImGui::TextUnformatted(packets[0].protocol.c_str());
+				ImGui::TextUnformatted(packets[0].transportProtocol.c_str());
 			}
 		}
 
@@ -114,7 +114,7 @@ void PacketListPanel::RenderGroupedView()
 			ImGui::TableSetColumnIndex(3);
 			if (!packets.empty())
 			{
-				ImGui::TextUnformatted(packets[0].protocol.c_str());
+				ImGui::TextUnformatted(packets[0].transportProtocol.c_str());
 			}
 		}
 		ImGui::EndTable();
@@ -182,15 +182,15 @@ void PacketListPanel::RenderDetailView()
 
 				// Column 1: Protocol
 				ImGui::TableSetColumnIndex(1);
-				ImGui::TextUnformatted(pkt.protocol.c_str());
+				ImGui::TextUnformatted(pkt.transportProtocol.c_str());
 
 				// Column 2: Source
 				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%s:%u", pkt.srcAddr.c_str(), pkt.srcPort);
+				ImGui::Text("%s:%u", pkt.srcIP.c_str(), pkt.srcPort);
 
 				// Column 3: Destination
 				ImGui::TableSetColumnIndex(3);
-				ImGui::Text("%s:%u", pkt.dstAddr.c_str(), pkt.dstPort);
+				ImGui::Text("%s:%u", pkt.dstIP.c_str(), pkt.dstPort);
 
 				// Column 4: Length
 				ImGui::TableSetColumnIndex(4);
@@ -250,13 +250,13 @@ void PacketListPanel::RenderAllPacketsView()
 									pkt.incoming ? "IN" : "OUT");
 
 			ImGui::TableSetColumnIndex(2);
-			ImGui::TextUnformatted(pkt.protocol.c_str());
+			ImGui::TextUnformatted(pkt.transportProtocol.c_str());
 
 			ImGui::TableSetColumnIndex(3);
-			ImGui::Text("%s:%u", pkt.srcAddr.c_str(), pkt.srcPort);
+			ImGui::Text("%s:%u", pkt.srcIP.c_str(), pkt.srcPort);
 
 			ImGui::TableSetColumnIndex(4);
-			ImGui::Text("%s:%u", pkt.dstAddr.c_str(), pkt.dstPort);
+			ImGui::Text("%s:%u", pkt.dstIP.c_str(), pkt.dstPort);
 
 			ImGui::TableSetColumnIndex(5);
 			ImGui::Text("%u", pkt.length);

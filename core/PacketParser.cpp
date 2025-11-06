@@ -83,12 +83,18 @@ void PacketParser::ParsePacket(PacketInfo& pkt)
 {
 	if (pkt.data.size() < sizeof(EthernetHeader)) return;
 
+	// Ethernet Layer
 	const auto* eth = reinterpret_cast<const EthernetHeader*>(pkt.data.data());
 	uint16_t etherType = ntohs(eth->type);
+
+	pkt.etherSrc = macToStr(eth->src);
+	pkt.etherDst = macToStr(eth->dst);
+	pkt.etherTypeStr = (etherType == 0x0800) ? "IPv4" : "Other";
 
 	// If not IPv4, return (for now we only handle IPv4)
 	if (etherType != 0x0800) return;
 
+	// IP Layer
 	const size_t ipOffset = sizeof(EthernetHeader);
 	if (pkt.data.size() < ipOffset + sizeof(IPv4Header)) return;
 
@@ -101,19 +107,22 @@ void PacketParser::ParsePacket(PacketInfo& pkt)
 	inet_ntop(AF_INET, &ip->saddr, src, sizeof(src));
 	inet_ntop(AF_INET, &ip->daddr, dst, sizeof(dst));
 
-	pkt.srcAddr = src;
-	pkt.dstAddr = dst;
-	pkt.protocol = "IP";
+	pkt.srcIP = src;
+	pkt.dstIP = dst;
+	pkt.ttl = ip->ttl;
 
 	size_t transportOffset = ipOffset + ipHeaderLen;
 	if (pkt.data.size() < transportOffset + 4) return;
 
+
+	// Transport Layer
 	switch (protocol)
 	{
 		case 6: // TCP
 		{
-			pkt.protocol = "TCP";
+			pkt.transportProtocol = "TCP";
 			if (pkt.data.size() < transportOffset + sizeof(TCPHeader)) return;
+
 			const auto* tcp = reinterpret_cast<const TCPHeader*>(pkt.data.data() + transportOffset);
 			pkt.srcPort = ntohs(tcp->src_port);
 			pkt.dstPort = ntohs(tcp->dst_port);
@@ -121,21 +130,22 @@ void PacketParser::ParsePacket(PacketInfo& pkt)
 		}
 		case 17: // UDP
 		{
-			pkt.protocol = "UDP";
+			pkt.transportProtocol = "UDP";
 			if (pkt.data.size() < transportOffset + sizeof(UDPHeader)) return;
+
 			const auto* udp = reinterpret_cast<const UDPHeader*>(pkt.data.data() + transportOffset);
 			pkt.srcPort = ntohs(udp->src_port);
 			pkt.dstPort = ntohs(udp->dst_port);
 			break;
 		}
 		default:
-			pkt.protocol = "Other";
+			pkt.transportProtocol = "Other";
 			break;
 	}
 
 	// Determine packet direction: incoming if source IP is not local
-	bool srcIsLocal = IsLocalAddress(pkt.srcAddr);
-	bool dstIsLocal = IsLocalAddress(pkt.dstAddr);
+	bool srcIsLocal = IsLocalAddress(pkt.srcIP);
+	bool dstIsLocal = IsLocalAddress(pkt.dstIP);
 
 	// If source is external and destination local -> incoming
 	// If source is local and destination external -> outgoing
