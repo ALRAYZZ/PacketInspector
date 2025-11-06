@@ -272,10 +272,23 @@ void GuiManager::RenderPacketInspectorTab()
 	capturePanel->Render();
 	ImGui::Separator();
 
+	ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 
+	// Define split ratio
+	float leftPanelWidth = availableRegion.x * 0.6f;
+	float rightPanelWidth = availableRegion.x * 0.4f - ImGui::GetStyle().ItemSpacing.x;
+
+	// Left Panel - Packet List
+	ImGui::BeginChild("PacketListRegion", ImVec2(leftPanelWidth, availableRegion.y), true);
 	packetListPanel->Render();
-	ImGui::Spacing();
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	// Right Panel - Packet Details
+	ImGui::BeginChild("PacketDetailRegion", ImVec2(rightPanelWidth, availableRegion.y), true);
 	packetDetailPanel->Render();
+	ImGui::EndChild();
 }
 
 // Render Ping Tool tab content (placeholder for now)
