@@ -31,8 +31,12 @@ void CaptureControlPanel::Render()
 		return;
 	}
 
-	// Two column layout : Device list on left, controls on right
-	ImGui::BeginChild("DeviceList", ImVec2(ImGui::GetContentRegionAvail().x * 0.6f, 0), true);
+	// Height for the control panel
+	const float controlPanelHeight = 280.0f;
+	const float availableWidth = ImGui::GetContentRegionAvail().x;
+
+	// Two column layout:
+	ImGui::BeginChild("DeviceList", ImVec2(availableWidth * 0.6f, controlPanelHeight), true);
 	{
 		ImGui::TextUnformatted("Network Interfaces:");
 		ImGui::Separator();
@@ -52,13 +56,13 @@ void CaptureControlPanel::Render()
 	ImGui::SameLine();
 
 	// Right column: Global controls for selected device
-	ImGui::BeginChild("Controls", ImVec2(0, 0), true);
+	ImGui::BeginChild("Controls", ImVec2(0, controlPanelHeight), true);
 	{
 		ImGui::TextUnformatted("Capture Controls:");
 		ImGui::Separator();
 		ImGui::Spacing();
 
-
+		// Display error/selection status
 		if (selectedDevice < 0)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.6f, 0.0f, 1.0f));
@@ -76,7 +80,6 @@ void CaptureControlPanel::Render()
 
 		ImGui::Separator();
 		ImGui::Spacing();
-
 
 		// Capture controls
 		ImGui::TextUnformatted("Packet Capture:");
@@ -182,13 +185,13 @@ void CaptureControlPanel::Render()
 		if (captureEngine->IsDumping())
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f));
-			ImGui::TextUnformatted("Writting to file...");
+			ImGui::TextUnformatted("Writing to file...");
 			ImGui::PopStyleColor();
 		}
 
 		ImGui::Unindent();
 
-		// Error popus
+		// Error popups
 		if (ImGui::BeginPopupModal("NoDeviceError", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("No network interface selected!");
