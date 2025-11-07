@@ -65,28 +65,34 @@ void CaptureControlPanel::Render()
 				}
 			}
 
-			if (!captureEngine->IsCapturing())
+			// Allow dump controls regardless of capture state
+			ImGui::Separator();
+			ImGui::TextUnformatted("Capture Dump:");
+
+			static char dumpFilename[256] = "capture_dump.pcap";
+
+			// Only allow changing filename when not dumping
+			if (!captureEngine->IsDumping())
 			{
-				ImGui::Separator();
-				ImGui::TextUnformatted("Capture Dump:");
-
-				static char dumpFilename[256] = "capture_dump.pcap";
-
 				ImGui::InputText("File Name", dumpFilename, IM_ARRAYSIZE(dumpFilename));
+			}
+			else
+			{
+				ImGui::TextDisabled("File Name: %s", dumpFilename);
+			}
 
-				if (!captureEngine->IsDumping())
+			if (!captureEngine->IsDumping())
+			{
+				if (ImGui::Button("Start Dump"))
 				{
-					if (ImGui::Button("Start Dump"))
-					{
-						captureEngine->StartDump(dumpFilename);
-					}
+					captureEngine->StartDump(dumpFilename);
 				}
-				else
+			}
+			else
+			{
+				if (ImGui::Button("Stop Dump"))
 				{
-					if (ImGui::Button("Stop Dump"))
-					{
-						captureEngine->StopDump();
-					}
+					captureEngine->StopDump();
 				}
 			}
 
