@@ -20,7 +20,8 @@ private:
 	enum class AppTab
 	{
 		PacketInspector,
-		PingTool
+		PingTool,
+		PacketCrafter
 	};
 
 	SDL_Window* window;
@@ -31,6 +32,7 @@ private:
 	void RenderTabBar(int displayW);
 	void RenderPacketInspectorTab();
 	void RenderPingToolTab();
+	void RenderPacketCrafterTab();
 
 
 #ifdef _WIN32

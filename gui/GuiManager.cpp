@@ -10,6 +10,8 @@
 #include "panels/PacketDetailPanel.h"
 #include "core/PingEngine.h"
 #include "panels/PingToolPanel.h"
+#include "core/PacketCrafterEngine.h"
+#include "panels/PacketCrafterPanel.h"
 
 
 #ifdef _WIN32
@@ -22,11 +24,13 @@
 // Unique is only when one owner exists, its the recommended default, but shared is needed for shared ownership
 std::shared_ptr<CaptureEngine> captureEngine;
 std::shared_ptr<PingEngine> pingEngine;
+std::shared_ptr<PacketCrafterEngine> packetCrafterEngine;
 
 std::unique_ptr<CaptureControlPanel> capturePanel;
 std::unique_ptr<PacketListPanel> packetListPanel;
 std::unique_ptr<PacketDetailPanel> packetDetailPanel;
 std::unique_ptr<PingToolPanel> pingToolPanel;
+std::unique_ptr<PacketCrafterPanel> packetCrafterPanel;
 
 GuiManager::GuiManager()
 	: window(nullptr), glContext(nullptr), running(true), activeTab(AppTab::PacketInspector)
@@ -132,6 +136,9 @@ bool GuiManager::Initialize()
 	pingEngine = std::make_shared<PingEngine>();
 	pingToolPanel = std::make_unique<PingToolPanel>(pingEngine);
 
+	packetCrafterEngine = std::make_shared<PacketCrafterEngine>();
+	packetCrafterPanel = std::make_unique<PacketCrafterPanel>(packetCrafterEngine);
+
 	return true;
 }
 
@@ -189,6 +196,9 @@ void GuiManager::NewFrame()
 			break;
 		case AppTab::PingTool:
 			RenderPingToolTab();
+			break;
+		case AppTab::PacketCrafter:
+			RenderPacketCrafterTab();
 			break;
 	}
 
@@ -262,6 +272,30 @@ void GuiManager::RenderTabBar(int displayW)
 	}
 	ImGui::PopStyleColor(4);
 
+	ImGui::SameLine();
+
+	// Packet Crafter Tab
+	if (activeTab == AppTab::PacketCrafter)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeTabColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, activeTabTextColor);
+	}
+	else
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.12f, 0.3f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, inactiveHoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, buttonActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_Text, inactiveTabTextColor);
+	}
+	
+	if (ImGui::Button("Packet Crafter"))
+	{
+		activeTab = AppTab::PacketCrafter;
+	}
+	ImGui::PopStyleColor(4);
+
 	// Exit button on the far right with normal styling
 	ImGui::SameLine(displayW - 95.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 8.0f));
@@ -316,12 +350,21 @@ void GuiManager::RenderPacketInspectorTab()
 	ImGui::EndChild();
 }
 
-// Render Ping Tool tab content (placeholder for now)
+// Render Ping Tool tab content
 void GuiManager::RenderPingToolTab()
 {
 	if (pingToolPanel)
 	{
 		pingToolPanel->Render();
+	}
+}
+
+// Render Packet Crafter tab content
+void GuiManager::RenderPacketCrafterTab()
+{
+	if (packetCrafterPanel)
+	{
+		packetCrafterPanel->Render();
 	}
 }
 
@@ -355,6 +398,8 @@ void GuiManager::Shutdown()
 	pingToolPanel.reset();
 	pingEngine.reset();
 	packetDetailPanel.reset();
+	packetCrafterPanel.reset();
+	packetCrafterEngine.reset();
 
 	// Clean up ImGui and backends and context
 	if (ImGui::GetCurrentContext())
