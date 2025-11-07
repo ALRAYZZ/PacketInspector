@@ -34,6 +34,11 @@ public:
 
 	std::vector<PacketInfo> GetRecentPackets();
 	std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> GetGroupedPackets(bool incomingOnly);
+	
+	// Packet history management
+	std::vector<PacketInfo> GetAllCapturedPackets();
+	size_t GetTotalPacketCount() const;
+	void ClearPacketHistory();
 
 private:
 	pcap_if_t* allDevices;
@@ -42,9 +47,17 @@ private:
 	std::thread	captureThread;
 
 	std::vector<std::string> deviceNames;
+	
+	// Recent packets buffer (for real-time display)
 	std::deque<PacketInfo> packetBuffer;
 	std::recursive_mutex packetMutex;
-	const size_t maxPackets = 200;
+	const size_t maxRecentPackets = 2000;
+	
+	// Complete packet history (for history tab)
+	std::vector<PacketInfo> packetHistory;
+	std::recursive_mutex historyMutex;
+	const size_t maxHistoryPackets = 50000;
+	std::atomic<size_t> totalPacketCount{0};
 
 	pcap_dumper_t* dumper = nullptr;
 	bool dumpingEnabled = false;

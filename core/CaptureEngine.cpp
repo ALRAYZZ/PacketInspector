@@ -207,14 +207,34 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 	const size_t toCopy = std::min<size_t>(available, 64u);
 	packet.data.assign(bytes, bytes + toCopy);
 	PacketParser::ParsePacket(packet);
+	
+	// Add to recent packets buffer (rolling window for UI)
 	{
-		// Prevent concurrent access to packetBuffer
 		std::scoped_lock lock(self->packetMutex);
-		self->packetBuffer.push_back(std::move(packet));
-		if (self->packetBuffer.size() > self->maxPackets)
+		self->packetBuffer.push_back(packet);
+		if (self->packetBuffer.size() > self->maxRecentPackets)
 		{
 			self->packetBuffer.pop_front();
 		}
+	}
+	
+	// Add to complete packet history (for history tab)
+	{
+		std::scoped_lock lock(self->historyMutex);
+		self->packetHistory.push_back(std::move(packet));
+		
+		// Limit history size to prevent unbounded memory growth
+		if (self->packetHistory.size() > self->maxHistoryPackets)
+		{
+			// Remove oldest 10% when limit is reached
+			const size_t toRemove = self->maxHistoryPackets / 10;
+			self->packetHistory.erase(
+				self->packetHistory.begin(),
+				self->packetHistory.begin() + toRemove
+			);
+		}
+		
+		self->totalPacketCount.fetch_add(1);
 	}
 }
 
@@ -242,4 +262,31 @@ std::map<std::tuple<std::string, uint16_t>, std::vector<PacketInfo>> CaptureEngi
 		groupedPackets[key].push_back(packet);
 	}
 	return groupedPackets;
+}
+
+// Get all captured packets from history
+std::vector<PacketInfo> CaptureEngine::GetAllCapturedPackets()
+{
+	std::scoped_lock lock(historyMutex);
+	return packetHistory;
+}
+
+// Get total packet count since capture started
+size_t CaptureEngine::GetTotalPacketCount() const
+{
+	return totalPacketCount.load();
+}
+
+// Clear packet history
+void CaptureEngine::ClearPacketHistory()
+{
+	{
+		std::scoped_lock lock(packetMutex);
+		packetBuffer.clear();
+	}
+	{
+		std::scoped_lock lock(historyMutex);
+		packetHistory.clear();
+		totalPacketCount.store(0);
+	}
 }
