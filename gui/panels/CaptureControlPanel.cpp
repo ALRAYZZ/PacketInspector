@@ -191,6 +191,22 @@ void CaptureControlPanel::Render()
 
 		ImGui::Unindent();
 
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Packet statistics
+		ImGui::TextUnformatted("Statistics:");
+		ImGui::Indent();
+		ImGui::Text("Total Packets Captured: %zu", captureEngine->GetTotalPacketCount());
+		ImGui::Unindent();
+
+		ImGui::Spacing();
+		if (ImGui::Button("Clear Packet History", ImVec2(-1, 0)))
+		{
+			captureEngine->ClearPacketHistory();
+		}
+
 		// Error popups
 		if (ImGui::BeginPopupModal("NoDeviceError", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
