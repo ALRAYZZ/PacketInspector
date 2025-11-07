@@ -52,10 +52,12 @@ void PacketListPanel::RenderGroupedView()
 		ImGui::TableSetupColumn("Protocol", ImGuiTableColumnFlags_WidthFixed, 80.0f);
 		ImGui::TableHeadersRow();
 
+		int rowIndex = 0;
 		for (const auto& [key, packets] : incomingGroups)
 		{
 			const auto& [srcAddr, srcPort] = key;
 
+			ImGui::PushID(rowIndex);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
@@ -80,6 +82,9 @@ void PacketListPanel::RenderGroupedView()
 			{
 				ImGui::TextUnformatted(packets[0].transportProtocol.c_str());
 			}
+
+			ImGui::PopID();
+			rowIndex++;
 		}
 
 		ImGui::EndTable();
@@ -102,10 +107,12 @@ void PacketListPanel::RenderGroupedView()
 		ImGui::TableSetupColumn("Protocol", ImGuiTableColumnFlags_WidthFixed, 80.0f);
 		ImGui::TableHeadersRow();
 
+		int rowIndex = 0;
 		for (const auto& [key, packets] : outgoingGroups)
 		{
 			const auto& [dstAddr, dstPort] = key;
 
+			ImGui::PushID(rowIndex);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
@@ -130,6 +137,9 @@ void PacketListPanel::RenderGroupedView()
 			{
 				ImGui::TextUnformatted(packets[0].transportProtocol.c_str());
 			}
+
+			ImGui::PopID();
+			rowIndex++;
 		}
 
 		ImGui::EndTable();
