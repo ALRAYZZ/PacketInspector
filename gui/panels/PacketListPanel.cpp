@@ -10,12 +10,13 @@ void PacketListPanel::Render()
 {
 	ImGui::SeparatorText("Captured Packets");
 
-	// Toggle between groupes and all packets view
+	// Toggle between grouped and all packets view
 	ImGui::Checkbox("Group by Flow", &showGroupedView);
 	ImGui::SameLine();
 	if (ImGui::Button("Clear Selection"))
 	{
 		selectedFlowKey.clear();
+		selectedPacket.reset();
 	}
 
 	if (showGroupedView)
@@ -30,13 +31,17 @@ void PacketListPanel::Render()
 
 void PacketListPanel::RenderGroupedView()
 {
-	ImGui::BeginChild("GroupedPackets", ImVec2(0, 300), true);
-
-	// Get grouped incoming packets
+	// Get grouped packets
 	auto incomingGroups = captureEngine->GetGroupedPackets(true);
+	auto outgoingGroups = captureEngine->GetGroupedPackets(false);
 
+	ImVec2 availableRegion = ImGui::GetContentRegionAvail();
+
+	// Incoming Flows - Top Half
 	ImGui::Text("Incoming Flows (%zu)", incomingGroups.size());
 	ImGui::Separator();
+
+	ImGui::BeginChild("IncomingFlows", ImVec2(0, availableRegion.y * 0.5f - 10), true);
 
 	if (ImGui::BeginTable("IncomingFlowsTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY))
 	{
@@ -54,13 +59,14 @@ void PacketListPanel::RenderGroupedView()
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
-			// Create unique ID for this flow
-			std::string flowKey = srcAddr + ":" + std::to_string(srcPort);
+			// Create unique ID for this flow with IN: prefix
+			std::string flowKey = "IN:" + srcAddr + ":" + std::to_string(srcPort);
 
 			// Make row selectable
 			if (ImGui::Selectable(srcAddr.c_str(), selectedFlowKey == flowKey, ImGuiSelectableFlags_SpanAllColumns))
 			{
 				selectedFlowKey = flowKey;
+				selectedPacket.reset(); // Clear selected packet when changing flow
 			}
 
 			ImGui::TableSetColumnIndex(1);
@@ -80,18 +86,18 @@ void PacketListPanel::RenderGroupedView()
 	}
 	ImGui::EndChild();
 
-	// Show outgoing flows separately
+	// Outgoing Flows - Bottom Half
 	ImGui::Spacing();
-	ImGui::Text("Outgoing Packets");
+	ImGui::Text("Outgoing Flows (%zu)", outgoingGroups.size());
 	ImGui::Separator();
 
-	auto outgoingGroups = captureEngine->GetGroupedPackets(false);
+	ImGui::BeginChild("OutgoingFlows", ImVec2(0, 0), true);
 
-	if (ImGui::BeginTable("OutgoingFlowsTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0, 150)))
+	if (ImGui::BeginTable("OutgoingFlowsTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY))
 	{
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Destination", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Destination Port", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+		ImGui::TableSetupColumn("Dest Port", ImGuiTableColumnFlags_WidthFixed, 80.0f);
 		ImGui::TableSetupColumn("Packet Count", ImGuiTableColumnFlags_WidthFixed, 100.0f);
 		ImGui::TableSetupColumn("Protocol", ImGuiTableColumnFlags_WidthFixed, 80.0f);
 		ImGui::TableHeadersRow();
@@ -101,15 +107,23 @@ void PacketListPanel::RenderGroupedView()
 			const auto& [dstAddr, dstPort] = key;
 
 			ImGui::TableNextRow();
-
 			ImGui::TableSetColumnIndex(0);
-			ImGui::TextUnformatted(dstAddr.c_str());
+
+			// Create unique ID for this flow with OUT: prefix
+			std::string flowKey = "OUT:" + dstAddr + ":" + std::to_string(dstPort);
+
+			// Make row selectable
+			if (ImGui::Selectable(dstAddr.c_str(), selectedFlowKey == flowKey, ImGuiSelectableFlags_SpanAllColumns))
+			{
+				selectedFlowKey = flowKey;
+				selectedPacket.reset(); // Clear selected packet when changing flow
+			}
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text("%u", dstPort);
 
 			ImGui::TableSetColumnIndex(2);
-			ImGui::Text("%zu packets", packets.size());
+			ImGui::Text("%zu", packets.size());
 
 			ImGui::TableSetColumnIndex(3);
 			if (!packets.empty())
@@ -117,32 +131,36 @@ void PacketListPanel::RenderGroupedView()
 				ImGui::TextUnformatted(packets[0].transportProtocol.c_str());
 			}
 		}
+
 		ImGui::EndTable();
 	}
-
-	// Show detail view for selected flow
-	if (!selectedFlowKey.empty())
-	{
-		ImGui::Spacing();
-		RenderDetailView();
-	}
+	ImGui::EndChild();
 }
 
 void PacketListPanel::RenderDetailView()
 {
-	ImGui::SeparatorText(("Flow Details: " + selectedFlowKey).c_str());
+	// Determine if incoming or outgoing flow
+	bool isIncoming = selectedFlowKey.substr(0, 3) == "IN:";
+	std::string displayKey = selectedFlowKey.substr(selectedFlowKey.find(':') + 1);
 
-	auto incomingGroups = captureEngine->GetGroupedPackets(true);
+	ImGui::SeparatorText((std::string(isIncoming ? "Incoming" : "Outgoing") + " Flow: " + displayKey).c_str());
+
+	auto groups = captureEngine->GetGroupedPackets(isIncoming);
 
 	// Find the selected flow
-	for (const auto& [key, packets] : incomingGroups)
+	for (const auto& [key, packets] : groups)
 	{
-		const auto& [srcAddr, srcPort] = key;
-		std::string flowKey = srcAddr + ":" + std::to_string(srcPort);
+		const auto& [addr, port] = key;
+		std::string flowKey = (isIncoming ? "IN:" : "OUT:") + addr + ":" + std::to_string(port);
 
 		if (flowKey != selectedFlowKey) continue;
 
-		if (ImGui::BeginTable("FlowDetailsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0, 200)))
+		ImVec2 availableRegion = ImGui::GetContentRegionAvail();
+
+		// Flow details table - takes available space
+		ImGui::BeginChild("FlowDetailsChild", ImVec2(0, 0), false);
+
+		if (ImGui::BeginTable("FlowDetailsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY))
 		{
 			ImGui::TableSetupScrollFreeze(0, 1); // Header row always visible
 			ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed, 100.0f);
@@ -170,7 +188,6 @@ void PacketListPanel::RenderDetailView()
 #endif
 				char buf[16];
 				strftime(buf, sizeof(buf), "%H:%M:%S", &tm);
-
 
 				// Column 0: Time (selectable)
 				ImGui::TableSetColumnIndex(0);
@@ -202,6 +219,7 @@ void PacketListPanel::RenderDetailView()
 
 			ImGui::EndTable();
 		}
+		ImGui::EndChild();
 		break;
 	}
 }
@@ -261,10 +279,10 @@ void PacketListPanel::RenderAllPacketsView()
 			ImGui::TableSetColumnIndex(5);
 			ImGui::Text("%u", pkt.length);
 		}
+
+		ImGui::EndTable();
 	}
 }
-
-
 
 // Returns the currently selected packet, if any
 std::optional<PacketInfo> PacketListPanel::GetSelectedPacket() const

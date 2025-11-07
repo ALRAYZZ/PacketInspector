@@ -283,8 +283,8 @@ void GuiManager::RenderPacketInspectorTab()
 	ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 
 	// Define split ratio
-	float leftPanelWidth = availableRegion.x * 0.6f;
-	float rightPanelWidth = availableRegion.x * 0.4f - ImGui::GetStyle().ItemSpacing.x;
+	float leftPanelWidth = availableRegion.x * 0.5f;
+	float rightPanelWidth = availableRegion.x * 0.5f - ImGui::GetStyle().ItemSpacing.x;
 
 	// Left Panel - Packet List
 	ImGui::BeginChild("PacketListRegion", ImVec2(leftPanelWidth, availableRegion.y), true);
@@ -293,9 +293,26 @@ void GuiManager::RenderPacketInspectorTab()
 
 	ImGui::SameLine();
 
-	// Right Panel - Packet Details
-	ImGui::BeginChild("PacketDetailRegion", ImVec2(rightPanelWidth, availableRegion.y), true);
-	packetDetailPanel->Render();
+	// Right Panel - Flow Details (TOP) and Packet Details (BOTTOM)
+	ImGui::BeginChild("DetailsRegion", ImVec2(rightPanelWidth, availableRegion.y), true);
+	
+	if (!packetListPanel->selectedFlowKey.empty())
+	{
+		// Flow details in top half
+		ImGui::BeginChild("FlowDetailsRegion", ImVec2(0, availableRegion.y * 0.5f - 5), true);
+		packetListPanel->RenderDetailView();
+		ImGui::EndChild();
+
+		// Packet details in bottom half
+		ImGui::BeginChild("PacketDetailsRegion", ImVec2(0, 0), true);
+		packetDetailPanel->Render();
+		ImGui::EndChild();
+	}
+	else
+	{
+		ImGui::TextWrapped("Select a flow from the packet list to view its details here.");
+	}
+
 	ImGui::EndChild();
 }
 
