@@ -143,6 +143,31 @@ void CaptureEngine::StopCapture()
 	}
 }
 
+bool CaptureEngine::StartDump(const std::string& filename)
+{
+	if (!handle) return false;
+
+	dumper = pcap_dump_open(handle, filename.c_str());
+	if (!dumper)
+	{
+		fprintf(stderr, "Failed to open dump file: %s\n", pcap_geterr(handle));
+		return false;
+	}
+
+	dumpingEnabled = true;
+	return true;
+}
+
+void CaptureEngine::StopDump()
+{
+	if (dumper)
+	{
+		pcap_dump_close(dumper);
+		dumper = nullptr;
+	}
+	dumpingEnabled = false;
+}
+
 // Free the device list allocated by pcap_findalldevs
 void CaptureEngine::FreeDeviceList()
 {
@@ -171,6 +196,13 @@ void CaptureEngine::PacketHandler(u_char* user, const pcap_pkthdr* header, const
 
 	packet.length = header->len;
 
+	// Dump packet to file if dumping is enabled
+	if (self->dumpingEnabled && self->dumper)
+	{
+		pcap_dump(reinterpret_cast<u_char*>(self->dumper), header, bytes);
+	}
+
+	// Copy up to first 64 bytes of packet data for parsing
 	const size_t available = static_cast<size_t>(header->caplen);
 	const size_t toCopy = std::min<size_t>(available, 64u);
 	packet.data.assign(bytes, bytes + toCopy);

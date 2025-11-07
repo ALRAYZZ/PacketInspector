@@ -65,6 +65,31 @@ void CaptureControlPanel::Render()
 				}
 			}
 
+			if (!captureEngine->IsCapturing())
+			{
+				ImGui::Separator();
+				ImGui::TextUnformatted("Capture Dump:");
+
+				static char dumpFilename[256] = "capture_dump.pcap";
+
+				ImGui::InputText("File Name", dumpFilename, IM_ARRAYSIZE(dumpFilename));
+
+				if (!captureEngine->IsDumping())
+				{
+					if (ImGui::Button("Start Dump"))
+					{
+						captureEngine->StartDump(dumpFilename);
+					}
+				}
+				else
+				{
+					if (ImGui::Button("Stop Dump"))
+					{
+						captureEngine->StopDump();
+					}
+				}
+			}
+
 			ImGui::SameLine();
 			ImGui::Text(captureEngine->IsCapturing() ? "Status: Capturing..." : "Status: Idle.");
 		}
